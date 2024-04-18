@@ -361,6 +361,97 @@ impl Debug for Context {
     }
 }
 
+#[repr(C)]
+#[derive(Default)]
+pub struct KDescriptor {
+    pub padding: [u8;3],
+    pub limit: u16,
+    pub base: u64
+}
+
+impl Debug for KDescriptor {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("_KDESCRIPTOR")
+            .field("limit", &self.limit)
+            .field("base", &self.base)
+            .finish()
+    }
+}
+
+// https://www.vergiliusproject.com/kernels/x64/Windows%2010%20|%202016/2210%2022H2%20(May%202023%20Update)/_KSPECIAL_REGISTERS
+#[repr(C)]
+#[derive(Default)]
+pub struct KSpecialRegisters {
+    pub cr0: u64,
+    pub cr2: u64,
+    pub cr3: u64,
+    pub cr4: u64,
+    pub dr0: u64,
+    pub dr1: u64,
+    pub dr2: u64,
+    pub dr3: u64,
+    pub dr6: u64,
+    pub dr7: u64,
+    pub gdtr: KDescriptor,
+    pub idtr: KDescriptor,
+    pub tr: u16,
+    pub ldtr: u16,
+    pub mxcsr: u32,
+    pub debug_control: u64,
+    pub last_branch_to_rip: u64,
+    pub last_branch_from_rip: u64,
+    pub last_exception_to_rip: u64,
+    pub last_exception_from_rip: u64,
+    pub cr8: u64,
+    pub msr_gs_base: u64,
+    pub msr_gs_swap: u64,
+    pub msr_star: u64,
+    pub msr_lstar: u64,
+    pub msr_cstar: u64,
+    pub msr_syscall_mask: u64,
+    pub msr_xcr0: u64,
+    pub msr_fs_base: u64,
+    pub special_padding_0: u64,
+}
+
+impl Debug for KSpecialRegisters {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("KSpecialRegisters")
+            .field("cr0", &self.cr0)
+            .field("cr2", &self.cr2)
+            .field("cr3", &self.cr3)
+            .field("cr4", &self.cr4)
+            .field("dr0", &self.dr0)
+            .field("dr1", &self.dr1)
+            .field("dr2", &self.dr2)
+            .field("dr3", &self.dr3)
+            .field("dr6", &self.dr6)
+            .field("dr7", &self.dr7)
+            .field("gdtr", &self.gdtr)
+            .field("idtr", &self.idtr)
+            .field("tr", &self.tr)
+            .field("ldtr", &self.ldtr)
+            .field("mxcsr", &self.mxcsr)
+            .field("debug_control", &self.debug_control)
+            .field("last_branch_to_rip", &self.last_branch_to_rip)
+            .field("last_branch_from_rip", &self.last_branch_from_rip)
+            .field("last_exception_to_rip", &self.last_exception_to_rip)
+            .field("last_exception_from_rip", &self.last_exception_from_rip)
+            .field("cr8", &self.cr8)
+            .field("msr_gs_base", &self.msr_gs_base)
+            .field("msr_gs_swap", &self.msr_gs_swap)
+            .field("msr_star", &self.msr_star)
+            .field("msr_lstar", &self.msr_lstar)
+            .field("msr_cstar", &self.msr_cstar)
+            .field("msr_syscall_mask", &self.msr_syscall_mask)
+            .field("msr_xcr0", &self.msr_xcr0)
+            .field("msr_fs_base", &self.msr_fs_base)
+            .field("special_padding_0", &self.special_padding_0)
+            .finish()
+    }
+}
+
+
 /// Peek for a `T` from the cursor.
 pub fn peek_struct<T>(reader: &mut impl Reader) -> Result<T> {
     let mut s = mem::MaybeUninit::uninit();

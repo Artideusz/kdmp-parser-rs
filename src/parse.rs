@@ -15,10 +15,7 @@ use crate::error::{PxeNotPresent, Result};
 use crate::gxa::Gxa;
 use crate::map::{MappedFileReader, Reader};
 use crate::structs::{
-    read_struct, BmpHeader64, Context, DumpType, ExceptionRecord64, FullRdmpHeader64, Header64,
-    KdDebuggerData64, KernelRdmpHeader64, LdrDataTableEntry, ListEntry, Page, PfnRange,
-    PhysmemDesc, PhysmemMap, PhysmemRun, UnicodeString, DUMP_HEADER64_EXPECTED_SIGNATURE,
-    DUMP_HEADER64_EXPECTED_VALID_DUMP,
+    read_struct, BmpHeader64, Context, DumpType, ExceptionRecord64, FullRdmpHeader64, Header64, KSpecialRegisters, KdDebuggerData64, KernelRdmpHeader64, LdrDataTableEntry, ListEntry, Page, PfnRange, PhysmemDesc, PhysmemMap, PhysmemRun, UnicodeString, DUMP_HEADER64_EXPECTED_SIGNATURE, DUMP_HEADER64_EXPECTED_VALID_DUMP
 };
 use crate::{AddrTranslationError, Gpa, Gva, KdmpParserError, Pfn, Pxe};
 
@@ -237,6 +234,8 @@ pub struct KernelDumpParser {
     dump_type: DumpType,
     /// Context header.
     context: Box<Context>,
+    /// Special Registers State.
+    k_special_registers: Box<KSpecialRegisters>,
     /// The dump headers.
     headers: Box<Header64>,
     /// This maps a physical address to a file offset. Seeking there gives the
@@ -293,6 +292,7 @@ impl KernelDumpParser {
             headers,
             physmem,
             reader,
+            k_special_registers: Default::default(),
             kernel_modules: Default::default(),
             user_modules: Default::default(),
         };
@@ -319,6 +319,13 @@ impl KernelDumpParser {
         let Some(prcb_addr) = try_find_prcb(&mut parser, &kd_debugger_data_block)? else {
             return Ok(parser);
         };
+
+        // We try to read the _KSPECIAL_REGISTERS struct pointed by the _KPROCESSOR_STATE struct.
+        let Some(k_special_registers) = parser.try_virt_read_struct::<KSpecialRegisters>((prcb_addr.u64()+(kd_debugger_data_block.offset_prcb_proc_state_special_reg as u64)).into())? else {
+            return Ok(parser);
+        };
+
+        parser.k_special_registers = Box::new(k_special_registers);
 
         // Finally, we're ready to extract the user modules!
         let Some(user_modules) =
@@ -390,6 +397,11 @@ impl KernelDumpParser {
     /// Get the context record.
     pub fn context_record(&self) -> &Context {
         &self.context
+    }
+
+    /// Get the special registers saved in _KSPECIAL_REGISTERS
+    pub fn special_registers(&self) -> &KSpecialRegisters {
+        &self.k_special_registers
     }
 
     /// Translate a [`Gpa`] into a file offset of where the content of the page
