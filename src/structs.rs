@@ -371,7 +371,7 @@ pub struct KDescriptor {
 
 impl Debug for KDescriptor {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_struct("_KDESCRIPTOR")
+        f.debug_struct("KDescriptor")
             .field("limit", &self.limit)
             .field("base", &self.base)
             .finish()
